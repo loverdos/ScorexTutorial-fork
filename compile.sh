@@ -1,4 +1,6 @@
-pdflatex scorex
+#!/bin/sh
+
+pdflatex -shell-escape scorex
 bibtex scorex
-pdflatex scorex
-pdflatex scorex
+pdflatex -shell-escape scorex
+pdflatex -shell-escape scorex

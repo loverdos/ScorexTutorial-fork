@@ -8,7 +8,8 @@
 \usepackage{amsthm}
 \usepackage{amsmath}
 
-\usepackage{listings}
+% \usepackage{listings}
+\usepackage{minted}
 
 
 \newtheorem{axiom}{Axiom}
@@ -43,24 +44,24 @@
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
-\lstdefinestyle{myScalastyle}{
-  frame=tb,
-  language=scala,
-  aboveskip=3mm,
-  belowskip=3mm,
-  showstringspaces=false,
-  columns=flexible,
-  basicstyle={\small\ttfamily},
-  numbers=none,
-  numberstyle=\tiny\color{gray},
-  keywordstyle=\color{blue},
-  commentstyle=\color{dkgreen},
-  stringstyle=\color{mauve},
-  frame=single,
-  breaklines=true,
-  breakatwhitespace=true,
-  tabsize=3,
-}
+% \lstdefinestyle{myScalastyle}{
+%   frame=tb,
+%   language=scala,
+%   aboveskip=3mm,
+%   belowskip=3mm,
+%   showstringspaces=false,
+%   columns=flexible,
+%   basicstyle={\small\ttfamily},
+%   numbers=none,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+%   frame=single,
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   tabsize=3,
+% }
 \newtheorem{claim1}{Claim}
 \newtheorem{dfn}{Definition}
 \newtheorem{defn}{Definition}
@@ -828,7 +829,7 @@ The goal of a fullnode node is to compute the same \textit{minimal state}~(see S
 
 A \textit{node view holder} is a component that manages and updates this view when it receives either an offchain object (such as an offchain transaction), or an on-chain object~(such as a block (header), a key-block/micro-block in Bitcoin-NG, a blockheader/fullblock/state-snapshot in RollerChain). We refer to an object of the latter kind as \textit{persistent node view modifier}. Node view and its holder have following type signatures:
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait NodeViewHolder[P <: Proposition, TX <: Transaction[P],
 	PMOD <: PersistentNodeViewModifier[P, TX]] extends Actor {
 
@@ -839,7 +840,7 @@ trait NodeViewHolder[P <: Proposition, TX <: Transaction[P],
   type MP <: MemoryPool[TX, MP]
 
   type NodeView = (HIS, MS, VL, MP)
-\end{lstlisting}
+\end{minted}
 
 In the snippet, the types and traits are modules possibly parametrized with other modules~(including themselves\footnote{
 	This is called \textit{F-bounded polymorphism~\cite{f-bound}} and is widely used in Scorex.}). A concrete parameter has to be derived from an upper-bound abstract interface~(for example, concrete minimal state representation has to be derived from the \textit{MinimalState} trait).
@@ -857,7 +858,7 @@ All modifiers have identifiers of the same length~(to be set via \textit{applica
 
 A concrete implementation of a modifier must provide: (1) A type-identifer for the type of modifier, (2) An identifier for the modifier itself, and (3) A method giving a binary representation of the identifier:
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait NodeViewModifier extends BytesSerializable with JsonSerializable {
   ...
 
@@ -867,11 +868,11 @@ trait NodeViewModifier extends BytesSerializable with JsonSerializable {
 
   lazy val bytes: Array[Byte] = ...
 }
-\end{lstlisting}
+\end{minted}
 
 Log elements in the persistent node view modifiers hierarchy refer to a parent. A persistent modifier can also contain transactions~(but that is optional): 
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait PersistentNodeViewModifier[P <: Proposition, 
          TX <: Transaction[P]] extends NodeViewModifier {
 
@@ -880,7 +881,7 @@ trait PersistentNodeViewModifier[P <: Proposition,
   // with Dotty it would be Seq[TX] | Nothing
   def transactions: Option[Seq[TX]]
 }
-\end{lstlisting}
+\end{minted}
 
 
 \section{The State Design}
@@ -889,7 +890,7 @@ trait PersistentNodeViewModifier[P <: Proposition,
 A minimal state is a data structure which deterministically defines whether an arbitrary transaction is valid and so
 applicable to it or not. See section~\ref{min-state} for details. The signature of a \textit{MinimalState} is
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait MinimalState[
     P <: Proposition,
     BX <: Box[P],
@@ -899,23 +900,23 @@ trait MinimalState[
 ] extends NodeViewComponent{
   self: MS =>  
   ...
-\end{lstlisting}
+\end{minted}
 
 Per definition, we define methods to validate a transaction: 
 
-\begin{lstlisting}
+\begin{minted}{scala}
   def validate(transaction: TX): Try[Unit]
 
   def isValid(tx: TX): Boolean = validate(tx).isSuccess
-\end{lstlisting}
+\end{minted}
 
 The trait also has methods to get a closed box~(see section~\ref{sect_box}), to apply a persistent modifier, and to roll back to a previous version: 
 
-\begin{lstlisting}
+\begin{minted}{scala}
   def closedBox(boxId: Array[Byte]): Option[BX]
   def applyModifier(mod: M): Try[MS]
   def rollbackTo(version: VersionTag): Try[MS]
-\end{lstlisting}
+\end{minted}
 
 
 \subsection{Propositions and Proofs}
@@ -925,38 +926,38 @@ Blockchain can be thought as a mechanism to control access to some protected obj
 A proposition is a very abstract concept. The only property we require from it is to be serialized into bytes. In form of Scala code it is described as: 	
 
 \small{
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Proposition extends BytesSerializable
-\end{lstlisting}
+\end{minted}
 }
 In most cases, a proposition requires a proof of knowledge of a secret to be provided in a non-interactive zero-knowledge form. For example, in most of popular signature schemes a digital signature is a non-interactive zero-knowledge proof of a private key knowledge. Scorex has a basic entity for that
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait ProofOfKnowledgeProposition[S <: Secret] extends Proposition
-\end{lstlisting}
+\end{minted}
 
 A proof is an object which could satisfy a proposition given an additional input, namely a \textit{message}(e.g. transaction bytes). As well as a proposition, a proof could be serialized into bytes. 
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Proof[P <: Proposition] extends BytesSerializable {
   def isValid(proposition: P, message: Array[Byte]): Boolean
   ...
 }
-\end{lstlisting}
+\end{minted}
 
 For a \textit{ProofOfKnowledgeProposition} corresponding abstract proof is provided:
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait ProofOfKnowledge[S <: Secret, P <: ProofOfKnowledgeProposition[S]]
 	extends Proof[P]
-\end{lstlisting}
+\end{minted}
 
 \subsection{Box}
 \label{sect_box}
 
 A box is a minimal state element. An unspent output in Bitcoin is a box. An account in certain state in Nxt or Ethereum is also a box. Basically, a box is about some amount of tokens associated with it and also some proposition which protects a box from being spent by anyone but a party~(or parties) knowing how to satisfy the proposition. Thus the basic abstraction is as follows:
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Box[P <: Proposition] extends BytesSerializable {
   type Amount = Long
 
@@ -965,14 +966,14 @@ trait Box[P <: Proposition] extends BytesSerializable {
 
   val id: Array[Byte]
 }
-\end{lstlisting}
+\end{minted}
 
 
 \subsection{A History}
 
 At the very basic level, Scorex does not have the notion of blockchain. This is done in order to support blocktrees and other non-linear structures. So Scorex has an abstract concept of \textit{history} defined by the trait \textit{History}.
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait History[P <: Proposition,
 	TX <: Transaction[P],
 	PM <: PersistentNodeViewModifier[P, TX],
@@ -997,29 +998,29 @@ trait History[P <: Proposition,
 
   	def compare(other: SI): HistoryComparisonResult.Value	
   }
-\end{lstlisting}
+\end{minted}
 
 The trait contains no mention of block or blockchain. In principle, it supports non-linear structures and many object types to make the log. 
 
 A node continuosly tries to get alternative~(and possibly better) histories from the network around and also feed nodes with less developed history with locally stored modifiers. To provide an information on how much local history is developed, there is an abstract type \textit{SyncInfo} mentioned in the type signature of the \textit{History} trait. We assume that \textit{SyncInfo} at least provides information about \textit{starting points}, persistent modifier identifiers a node sends in order to help other node to understand its synchronization status. Usually it is about last block identifiers. 
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait SyncInfo extends BytesSerializable {
   def answer: Boolean
   def startingPoints: History.ModifierIds
 }
-\end{lstlisting}
+\end{minted}
 
 Function \textit{compare} is checking a \textit{SyncInfo} instance got from another party and returns one of \textit{HistoryComparisonResult} values provided below: 
 
-\begin{lstlisting}
+\begin{minted}{scala}
 object HistoryComparisonResult extends Enumeration {
   val Equal = Value(1)
   val Younger = Value(2)
   val Older = Value(3)
   val Nonsense = Value(4)
 }
-\end{lstlisting}
+\end{minted}
 
 If another peer is holding the same history, then \textit{compare} should return \textit{Equal}. If other peer's history is more developed than local then \textit{compare} returns \textit{Older}, if less developed - \textit{Younger}. If from \textit{SyncInfo} it is not possible to get other peer's hystory status, \textit{compare} should return \textit{Nonsense}. 
 
@@ -1028,17 +1029,17 @@ Function \textit{openSurfaceIds} returns last block if a history is linear, othe
 
 Function \textit{append} is trying to extend the history with a modifier given. No any attempt could be successful~(for example, if history does not contain modifier's parent, or modifier is not valid, append must aborts). There is an optional side-effect of an application to be passed to other components of the node. That is a rollback, which provides information about a last modifier id \textit{to} after the rollback~(and before the application), sequence of modifier thrown away and also a sequence of blocks to be applied~(after \textit{to}):
 
-\begin{lstlisting}
+\begin{minted}{scala}
 case class RollbackTo[PM <: PersistentNodeViewModifier[_, _]]
 	(to: ModifierId, thrown: Seq[PM], applied: Seq[PM])
-\end{lstlisting}
+\end{minted}
 
 
 \subsection{A Vault}
 
 A \textit{vault} is a storage for node-specific information. Usually this is about wallet functionality. The information is to be obtained via scanning whether an offchain transaction or a persistent modifier. A rollback is surely possible. Thus the interface of a vault is as follows.  
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Vault[P <: Proposition, 
 	TX <: Transaction[P],
     PMOD <: PersistentNodeViewModifier[P, TX], 
@@ -1055,11 +1056,11 @@ trait Vault[P <: Proposition,
 
   def rollback(to: VersionTag): Try[V]
 }
-\end{lstlisting}
+\end{minted}
 
 Scorex also contains \textit{Wallet} interface derived from the \textit{Vault}, parametrized with types of secrets and their public images also.
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Wallet[P <: Proposition, 
 	TX <: Transaction[P], 
 	PMOD <: PersistentNodeViewModifier[P,TX], 
@@ -1081,23 +1082,23 @@ trait Wallet[P <: Proposition,
 
   def secretByPublicImage(publicImage: PI): Option[S]
 }
-\end{lstlisting}
+\end{minted}
 
 
 \subsection{A Memory Pool}
 
 A memory pool holds transactions not included into blocks yet and hence unconfirmed. We omit its functions here~(as they are pretty trivial) and provide only the type signature of the trait.  
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait MemoryPool[TX <: Transaction[_], M <: MemoryPool[TX, M]]
-\end{lstlisting}
+\end{minted}
 
 
 \subsection{Block}
 
 It is possible to develop block-less system, the only requirement is to have a history which contains instances of persistence node view modifiers. Nevertheless, the basic interface for a block is provided as it is needed for almost all imaginable applications. In addition to \textit{identifier} and \textit{parent identifier} fields inherited from \textit{PersistentNodeViewModifier}, a \textit{Block} generic interface contains also a version~(we assume block format could change with time) and timestamp.
 
-\begin{lstlisting}
+\begin{minted}{scala}
 trait Block[P <: Proposition, TX <: Transaction[P]]
   extends PersistentNodeViewModifier[P, TX] with JsonSerializable {
 
@@ -1107,7 +1108,7 @@ trait Block[P <: Proposition, TX <: Transaction[P]]
 
   ...
 }
-\end{lstlisting}
+\end{minted}
 
 \section{Network Layer}
 
@@ -1117,13 +1118,13 @@ Network layer in Scorex is simpler than in Bitcoin or Nxt. It provides some basi
 
 \textit{NetworkController} class controls all the network interactions. It binds to the port given in the \textit{p2p/port} setting, obtains own external address other peers can connect to~(it s not always available), connects to a peer by a request and handles incoming connections. It also routes messages from peers to higher levels of the core and back.
 
-\begin{lstlisting}
-\end{lstlisting}
+\begin{minted}{scala}
+\end{minted}
 
 \subsection{Message Handler}
 
-\begin{lstlisting}
-\end{lstlisting}
+\begin{minted}{scala}
+\end{minted}
 
 \subsection{Peer Discovery}
 
